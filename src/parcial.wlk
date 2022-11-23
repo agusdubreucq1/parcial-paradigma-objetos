@@ -10,6 +10,7 @@ class Imperio{
 	
 	method evolucionar(){
 		self.ciudadesFelices().forEach({ciudad => ciudad.crecerPoblacion(2)})
+		self.edificios().evolucionar()
 	}
 	
 	method ciudadesFelices()=
@@ -18,6 +19,13 @@ class Imperio{
 	method pagar(dineroAPagar){
 		dinero-=dineroAPagar
 	}
+	
+	method cobrar(dineroACobrar){
+		dinero+=dineroACobrar
+	}
+	
+	method edificios()=
+		ciudades.map({ciudad => ciudad.edificios()}).flatten()
 }
 
 class Ciudad{
@@ -54,9 +62,21 @@ class Ciudad{
 		habitantes *= (1+ porcentaje/100)
 	}
 	
-	method incrementarTanques(){
-		tanques+=1
+	method agregarTanques(cant){
+		tanques+=cant
 	}
+	
+	method cobrarAlImperio(dinero){
+		imperio.pagar(dinero)
+	}
+	
+	method pagarAlImperio(dinero){
+		imperio.cobrar(dinero)
+	}
+}
+
+class Capital inherits Ciudad{
+	
 }
 
 /*
@@ -65,9 +85,15 @@ class Ciudad{
  class Edificio{
  	var property ciudad
  	var property costoDeConstruccionBase
- 	method costoDemantenimiento()=
- 		costoDeConstruccionBase*0.01
+ 	method costoDeMantenimiento()=
+ 		self.costoDeConstruccion()*0.01
  	method ciudadFeliz()= ciudad.esFeliz()
+ 	method evolucionar(){
+ 		ciudad.cobrarAlImperio(self.costoDeMantenimiento())
+ 	}
+ 	
+ 	method costoDeConstruccion()=
+ 		ciudad.costoDeConstruccion(self)
  		
  }
  
@@ -75,8 +101,11 @@ class Ciudad{
  	const property dineroAlEvolucionar
  	const property cultura =0
  	method tranquilidad() = 3
- 	method efectoAlEvolucionar(imperio){
- 		imperio.recibirDinero(dineroAlEvolucionar)
+ 	
+ 	override method evolucionar(){
+ 		super()
+ 		ciudad.pagarAlImperio(dineroAlEvolucionar)
+ 		
  	}
  }
  
@@ -89,10 +118,13 @@ class Ciudad{
  }
  
  class EdificioMilitar inherits Edificio{
+ 	var property tanquesGenerados
  	const property cultura=0
- 	const property tranquilidad() =0
- 	method efectoAlEvolucionar(imperio){
- 		ciudad.incrementarTanques()
+ 	const property tranquilidad =0
+ 	override method evolucionar(){
+ 		super()
+ 		ciudad.agregarTanques(tanquesGenerados)
+ 		
  	}
  	
  }

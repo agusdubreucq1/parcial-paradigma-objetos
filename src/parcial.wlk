@@ -39,10 +39,13 @@ class Ciudad{
 	const property edificios=[]
 	
 	method esFeliz()=
-		not imperio.estaEndeudado() && edificios.sum({edificio => edificio.tranquilidad()}) > self.disconformidad()
+		not imperio.estaEndeudado() &&  self.tranquilidad() > self.disconformidad()
 	
 	method disconformidad()=
 		habitantes / 10000 + 30.min(tanques)
+		
+	method tranquilidad()=
+		edificios.sum({edificio => edificio.tranquilidad()})
 	
 	method construir(edificio){
 		if(self.puedeConstruirse(edificio))
@@ -59,7 +62,7 @@ class Ciudad{
 	}
 	
 	method costoDeConstruccion(edificio)=
-		sistemaImpositivo.costo(edificio)
+		edificio.costoDeConstruccionBase() + sistemaImpositivo.agregado(edificio)
 	
 	method crecerPoblacion(porcentaje){
 		habitantes *= (1+ porcentaje/100)
@@ -84,7 +87,7 @@ class Ciudad{
 		edificios.sum({edificio => edificio.pepinesGenerados()})
 	
 	method evolucionar(){
-		edificios.evolucionar()
+		edificios.forEach({edificio => edificio.evolucionar()})
 		imperio.cobrar(self.pepinesGenerados())
 	}
 	
@@ -95,7 +98,7 @@ class Capital inherits Ciudad{
 		super().div(2)
 		
 	override method costoDeConstruccion(edificio)=
-		super(edificio)*1.1
+		super(edificio) * 1.1
 		
 	override method evolucionar(){
 		super()
@@ -105,7 +108,7 @@ class Capital inherits Ciudad{
 			self.sistemaImpositivo(incentivoCultural)
 		}
 		else{
-			self.sistemaImpositivo(citadino)
+			self.sistemaImpositivo(new Citadino(cadaCuantosHabitantes=25000))
 		}
 	}
 	
@@ -120,13 +123,16 @@ class Capital inherits Ciudad{
  	var property ciudad
  	var property costoDeConstruccionBase
  	method costoDeMantenimiento()=
- 		self.costoDeConstruccion()*0.01
+ 		self.costoDeConstruccion() *0.01
  	method ciudadFeliz()= ciudad.esFeliz()
  	method evolucionar(){
  		ciudad.cobrarAlImperio(self.costoDeMantenimiento())
  	}
  	method costoDeConstruccion()=
  		ciudad.costoDeConstruccion(self)
+ 		
+ 	method habitantesDeCiudad()=
+ 		ciudad.habitantes()
  		
  }
  
@@ -160,23 +166,24 @@ class Capital inherits Ciudad{
   * sistemas Impositivos
   */
   
-  object citadino{
-  	var property cadaCuantosHabitantes=25000
+  class Citadino{
+  	var property cadaCuantosHabitantes
   	
-  	method costo(edificio)=edificio.costoDeConstruccionBase() * (1 + 0.05*edificio.habitantes().div(cadaCuantosHabitantes))
+  	method agregado(edificio)= edificio.costoDeConstruccionBase() * 
+  		(0.05 * edificio.habitantesDeCiudad().div(cadaCuantosHabitantes))
   }
   
   object incentivoCultural{
-  	method costo(edificio)= edificio.costoDeConstruccionBase() - edificio.cultura() /3
+  	method agregado(edificio)= (- edificio.cultura().div(3))
   }
   
   object apaciguador{
-  	method costo(edificio) {
+  	method agregado(edificio) {
   		if(edificio.ciudadFeliz()){
-  			return edificio.costoDeConstruccionBase()
+  			return 0
   		}
   		else{
-  			return edificio.costoDeConstruccionBase() - edificio.tranquilidad()
+  			return (- edificio.tranquilidad())
   		}
   	}
   }

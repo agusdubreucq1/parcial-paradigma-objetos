@@ -10,7 +10,7 @@ class Imperio{
 	
 	method evolucionar(){
 		self.ciudadesFelices().forEach({ciudad => ciudad.crecerPoblacion(2)})
-		self.edificios().evolucionar()
+		ciudades.forEach({ciudad => ciudad.evolucionar()})
 	}
 	
 	method ciudadesFelices()=
@@ -23,6 +23,9 @@ class Imperio{
 	method cobrar(dineroACobrar){
 		dinero+=dineroACobrar
 	}
+	
+	method tresCiudadesFelicesMenorCultura()=
+		self.ciudadesFelices().sortedBy({x,y => x.cultura() < y.cultura()}).take(3)
 	
 	method edificios()=
 		ciudades.map({ciudad => ciudad.edificios()}).flatten()
@@ -73,10 +76,41 @@ class Ciudad{
 	method pagarAlImperio(dinero){
 		imperio.cobrar(dinero)
 	}
+	
+	method cultura()=
+		edificios.sum({edificio => edificio.cultura()})
+	
+	method pepinesGenerados()=
+		edificios.sum({edificio => edificio.pepinesGenerados()})
+	
+	method evolucionar(){
+		edificios.evolucionar()
+		imperio.cobrar(self.pepinesGenerados())
+	}
+	
 }
 
 class Capital inherits Ciudad{
+	override method disconformidad()=
+		super().div(2)
+		
+	override method costoDeConstruccion(edificio)=
+		super(edificio)*1.1
+		
+	override method evolucionar(){
+		super()
+		if(not self.esFeliz())
+			self.sistemaImpositivo(apaciguador)
+		else if(self.esFeliz() && imperio.tresCiudadesFelicesMenorCultura().contains(self)){
+			self.sistemaImpositivo(incentivoCultural)
+		}
+		else{
+			self.sistemaImpositivo(citadino)
+		}
+	}
 	
+	override method pepinesGenerados()=
+		super() * 3
 }
 
 /*
@@ -91,33 +125,26 @@ class Capital inherits Ciudad{
  	method evolucionar(){
  		ciudad.cobrarAlImperio(self.costoDeMantenimiento())
  	}
- 	
  	method costoDeConstruccion()=
  		ciudad.costoDeConstruccion(self)
  		
  }
  
  class EdificioEconomico inherits Edificio{
- 	const property dineroAlEvolucionar
+ 	const property pepinesGenerados
  	const property cultura =0
  	method tranquilidad() = 3
  	
- 	override method evolucionar(){
- 		super()
- 		ciudad.pagarAlImperio(dineroAlEvolucionar)
- 		
- 	}
  }
  
  class EdificioCultural inherits Edificio{
+ 	const property pepinesGenerados=0
  	const property cultura
  	method tranquilidad() = cultura * 3
- 	method efectoAlEvolucionar(imperio){
- 		
- 	}
  }
  
  class EdificioMilitar inherits Edificio{
+ 	const property pepinesGenerados=0
  	var property tanquesGenerados
  	const property cultura=0
  	const property tranquilidad =0
@@ -134,7 +161,7 @@ class Capital inherits Ciudad{
   */
   
   object citadino{
-  	var property cadaCuantosHabitantes=1
+  	var property cadaCuantosHabitantes=25000
   	
   	method costo(edificio)=edificio.costoDeConstruccionBase() * (1 + 0.05*edificio.habitantes().div(cadaCuantosHabitantes))
   }
